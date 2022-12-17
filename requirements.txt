@@ -1,0 +1,6 @@
+tk
+# folium
+# selenium
+# Pillow
+# thread6
+pyserial==3.3
