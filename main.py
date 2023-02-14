@@ -4,11 +4,14 @@ from tkinter.ttk import *
 import tkinter.scrolledtext as ST
 import serial
 import time
+import threading as thread
+import socket
 
-_PORT_ = '/dev/ttyUSB0'
+_END_FLAG_ = 0
+# _PORT_ = '/dev/ttyUSB0'
 
 _HOST_ = '192.168.1.7'  # The server's hostname or IP address
-_PORT_ = 5005  # The port used by the server
+_PORT_ = 7895  # The port used by the server
 
 class Dialog():
     def __init__(self):
@@ -75,31 +78,75 @@ class App:
         self.lev_button = Levitation_Button(self, 640,105)
         self.impulse_button = Impulse_Button(self, 640, 210)
         #
-        self.power=Power(self,230,0)
+        #self.power=Power(self,230,0)
         #
         self.pressure = Pressure(self, 330, 0)
         
-        # self.readData = thr.Thread(target=self.readAndParseDATA)
-        # self.readData.start()
+        self.socket = self.create_socket()
 
-    def connectUSB(self):
-        ser = serial.Serial(
-            # Serial Port to read the data from
-            port=_PORT_,
-            #Rate at which the information is shared to the communication channel
-            baudrate=9600,
-            #Applying Parity Checking (none in this case)
-            parity=serial.PARITY_NONE,
-            # Pattern of Bits to be read
-            stopbits=serial.STOPBITS_ONE,
-            # Total number of bits to be read
-            bytesize=serial.EIGHTBITS,
-            # Number of serial commands to accept before timing out
-            timeout=1
-        )
-        return ser
+        self.conn, self.addr = -1, -1
+        self.readData = thread.Thread(target=self.readAndParseDATA)
+        self.readData.start()
+        self.data = ""
 
-    # def readAndParseDATA(self):
+    def create_socket(self):
+        server_socket = socket.socket()  # get instance
+        print(_HOST_)
+        # bind host address and port together
+        server_socket.bind((_HOST_, _PORT_))
+        server_socket.listen(2)
+        return server_socket
+    # def connectUSB(self):
+    #     ser = serial.Serial(
+    #         # Serial Port to read the data from
+    #         port=_PORT_,
+    #         #Rate at which the information is shared to the communication channel
+    #         baudrate=9600,
+    #         #Applying Parity Checking (none in this case)
+    #         parity=serial.PARITY_NONE,
+    #         # Pattern of Bits to be read
+    #         stopbits=serial.STOPBITS_ONE,
+    #         # Total number of bits to be read
+    #         bytesize=serial.EIGHTBITS,
+    #         # Number of serial commands to accept before timing out
+    #         timeout=1
+    #     )
+    #     return ser
+
+
+    def readAndParseDATA(self):
+        self.socket.settimeout(5)
+        while(getFlag() == 0):
+            try:
+                print("Socket Timeout is 5 sec.")
+                print("Waiting for client...")
+                self.conn, self.addr = self.socket.accept()  # accept new connection
+                print("Connection from: " + str(self.addr))
+            except socket.timeout:
+                print("\n5 sec. over - No Client")
+                print("Checking again...\n")
+                time.sleep(1)
+                pass
+            else:
+                while(getFlag() == 0):
+                    try:
+                        # Eğer gönderemezse(Raspberry bağlantisi kesilirse) exception verir
+                        self.conn.sendall(b"ping")
+                        time1 = time.time()
+                        # eğer gönderebiliyorsa bağlantıda sorun yok demektir.
+                        data = self.conn.recv(1024).decode()
+                        time2 = time.time()
+                        print(time2-time1)
+                        print("Received Data: " + str(data))
+                       
+                        #changeAll(app)
+                        pass  # While a devam eder
+                    except:
+                        print("CONNECTION LOST")
+                        break  # while dan cikar tekrar bağlanti bekler
+
+                self.conn.close()  # close the connection
+    # def readAndParseDATA(self):#LoRa
     #     while(getFlag() == 0):
     #         try:
     #             self.serialCon = self.connectUSB()
@@ -112,13 +159,13 @@ class App:
     #                 #print(x)
     #                 datas = str(x).split(":")
     #                 paket = datas[0][2:4]
-    #                 if paket == '1':  # Battery 0 - 12
-    #                     paket1(self, datas[1])
-    #                 # Battery 12 - 18  + Left -Right Signal +Motor +Leakage Signal+Amper+Volt+pil Temp.
-    #                 if paket == '2':
-    #                     paket2(self, datas[1])
-    #                 if paket == '3':  # direksiyon + konum
-    #                     paket3(self, datas[1])
+    #                 # if paket == '1':  # Battery 0 - 12
+    #                 #     paket1(self, datas[1])
+    #                 # # Battery 12 - 18  + Left -Right Signal +Motor +Leakage Signal+Amper+Volt+pil Temp.
+    #                 # if paket == '2':
+    #                 #     paket2(self, datas[1])
+    #                 # if paket == '3':  # direksiyon + konum
+    #                 #     paket3(self, datas[1])
     #             self.serialCon.close()
 class Logo:
     def __init__(self, obj,_x_,_y_):
@@ -255,7 +302,7 @@ class Log:
 
 def exit_func(obj):
     setFlag(1)
-    #obj.readData.join()
+    obj.readData.join()
     print("Closing...")
     obj.window.destroy()
 
@@ -446,7 +493,7 @@ def updateLog(obj,text):
     t = time.localtime()
     current_time = time.strftime("%H:%M:%S:", t)
 
-    obj.log.insert(INSERT, current_time+ "  "+str(text)+ "\n")
+    obj.log.insert(INSERT, current_time+" "+str(text)+ "\n")
     obj.log.configure(state="disabled")
     obj.log.see(END)
     
@@ -490,7 +537,7 @@ def valf_signal(obj):
      
 def changeAll(obj):
     for i in range(0,50):
-        updateAll(obj,[i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i])
+        updateAll(obj,[i,i,i,i,i,i,i,i,i,i,i,i,i,i,i])
     
 def updateAll(obj,params):
     updateLog(obj.log,params)
@@ -499,27 +546,27 @@ def updateAll(obj,params):
     updateSpeeds(obj, params[6:9])
     updatePYRs(obj, params[9:12])
     updateThermos(obj, params[12:14])
-    updatePower(obj.power, params[14])
-    updatePressure(obj.pressure, params[15])
+    updatePressure(obj.pressure, params[14])
+    #updatePower(obj.power, params[14])
     obj.window.update()
     
     
 if __name__ == '__main__':
-    # while True:
-    #     set_HOST_("")
-    #     dialog = Dialog()
-    #     dialog.root.mainloop()
-    #     if len(_HOST_) == 0:
-    #         exit()
-    #     else:
-    #         if len(_HOST_) == 1:
-    #             print("Invalid IP...")
-    #             continue
-    #         else:
-    #             break
+    while True:
+        set_HOST_("")
+        dialog = Dialog()
+        dialog.root.mainloop()
+        if len(_HOST_) == 0:
+            exit()
+        else:
+            if len(_HOST_) == 1:
+                print("Invalid IP...")
+                continue
+            else:
+                break
     app = App()
     app.window.bind("<Up>", lambda event, obj=app: {changeLoc(obj), changeAcc(
-        obj), changeSpeed(obj), changeThermo(obj), changePower(obj), changePressure(obj),changePYR(obj),changeLog(obj)})
+        obj), changeSpeed(obj), changeThermo(obj),changePressure(obj),changePYR(obj),changeLog(obj)})
     app.window.bind("<Down>", lambda event, obj=app:changeAll(obj))
     '''app.stop_button.canvas.bind(
         "<Button-1>", lambda event, obj=app: stop_signal(obj))
