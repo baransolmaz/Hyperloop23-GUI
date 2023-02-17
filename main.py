@@ -6,12 +6,17 @@ import serial
 import time
 import threading as thread
 import socket
+from datetime import datetime
 
 _END_FLAG_ = 0
 # _PORT_ = '/dev/ttyUSB0'
 
 _HOST_ = '192.168.1.7'  # The server's hostname or IP address
 _PORT_ = 7895  # The port used by the server
+
+_LOG_FILE_NAME_ = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+open("Logs/"+_LOG_FILE_NAME_+".txt","x")
+_LOG_FILE_ = open("Logs/"+_LOG_FILE_NAME_+".txt", "w")
 
 class Dialog():
     def __init__(self):
@@ -114,6 +119,9 @@ class App:
     #     return ser
 
 
+    def appendFile(self,recived_data):
+        _LOG_FILE_.writelines(recived_data+"\n")
+        
     def readAndParseDATA(self):
         self.socket.settimeout(5)
         while(getFlag() == 0):
@@ -138,7 +146,7 @@ class App:
                         time2 = time.time()
                         print(time2-time1)
                         print("Received Data: " + str(data))
-                       
+                        self.appendFile(str(data))
                         #changeAll(app)
                         pass  # While a devam eder
                     except:
@@ -146,6 +154,8 @@ class App:
                         break  # while dan cikar tekrar bağlanti bekler
 
                 self.conn.close()  # close the connection
+
+    
     # def readAndParseDATA(self):#LoRa
     #     while(getFlag() == 0):
     #         try:
@@ -167,6 +177,8 @@ class App:
     #                 # if paket == '3':  # direksiyon + konum
     #                 #     paket3(self, datas[1])
     #             self.serialCon.close()
+    
+        
 class Logo:
     def __init__(self, obj,_x_,_y_):
         self.logoCanvas = Canvas(
@@ -303,6 +315,7 @@ class Log:
 def exit_func(obj):
     setFlag(1)
     obj.readData.join()
+    _LOG_FILE_.close()
     print("Closing...")
     obj.window.destroy()
 
@@ -565,6 +578,9 @@ if __name__ == '__main__':
             else:
                 break
     app = App()
+    app.appendFile("deneme123")
+    app.appendFile("deneme129")
+    app.appendFile("deneme12311")
     app.window.bind("<Up>", lambda event, obj=app: {changeLoc(obj), changeAcc(
         obj), changeSpeed(obj), changeThermo(obj),changePressure(obj),changePYR(obj),changeLog(obj)})
     app.window.bind("<Down>", lambda event, obj=app:changeAll(obj))
