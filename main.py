@@ -16,7 +16,7 @@ _PORT_ = 7895  # The port used by the server
 
 _LOG_FILE_NAME_ = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
 open("Logs/"+_LOG_FILE_NAME_+".txt","x")
-_LOG_FILE_ = open("Logs/"+_LOG_FILE_NAME_+".txt", "w")
+#_LOG_FILE_ = open("Logs/"+_LOG_FILE_NAME_+".txt", "a")
 
 class Dialog():
     def __init__(self):
@@ -49,7 +49,7 @@ class Dialog():
 class App:
     def __init__(self):
         self.window = Tk()
-        self.window.geometry("750x450")  # Screen Size(yatay x dikey)
+        self.window.geometry("750x470")  # Screen Size(yatay x dikey)
         self.window.resizable(0, 0)
         #self.window.title("ALFA ETA-H")  # Pencere ismi
         self.window.title("ALFA ETA-H "+_HOST_)  # Pencere ismi
@@ -58,17 +58,19 @@ class App:
         photo = PhotoImage(file="Images/logo_black.png")  # app icon
         self.window.iconphoto("false", photo)
         #
-        self.speedometer_X = Speedometer(self,"X",350,450)
-        self.speedometer_Y = Speedometer(self,"Y",550,450)
-        self.speedometer_Z = Speedometer(self,"Z",750,450)
+        self.speedometer_X = Speedometer(self,"X",350,470)
+        self.speedometer_Y = Speedometer(self,"Y",550,470)
+        self.speedometer_Z = Speedometer(self,"Z",750,470)
         #
+        self.acceleration_txt=Name_Text(self,"Acceleration",10,450,30,110)
         self.acceleration_X=Acceleration(self,"X",10,450)
         self.acceleration_Y=Acceleration(self,"Y",50,450)
         self.acceleration_Z=Acceleration(self,"Z",90,450)
         #
-        self.location_X = Location(self, "X", 350, 350)
-        self.location_Y = Location(self, "Y", 550, 350)
-        self.location_Z = Location(self, "Z", 750, 350)
+        self.location_txt=Name_Text(self,"Location",300,305,25,300)
+        self.location_X = Location(self, "X", 350, 360)
+        self.location_Y = Location(self, "Y", 550, 360)
+        self.location_Z = Location(self, "Z", 750, 360)
         #
         self.pyr = PYR(self, 440, 0)
         #
@@ -120,7 +122,9 @@ class App:
 
 
     def appendFile(self,recived_data):
-        _LOG_FILE_.writelines(recived_data+"\n")
+        _LOG_FILE_= open("Logs/"+_LOG_FILE_NAME_+".txt", "a")
+        _LOG_FILE_.write(recived_data+"\n")
+        _LOG_FILE_.close()
         
     def readAndParseDATA(self):
         self.socket.settimeout(5)
@@ -178,7 +182,14 @@ class App:
     #                 #     paket3(self, datas[1])
     #             self.serialCon.close()
     
-        
+class Name_Text:
+    def __init__(self,obj,_str_,_x_,_y_,_height_,_widht_):
+        self.txtCanvas = Canvas(
+            obj.window, height=_height_, width=_widht_, background=obj.window["bg"], highlightbackground="black", highlightthickness=1)
+        self.txtCanvas.place(x=_x_, y=_y_, anchor=NW)
+        self.p_txt = self.txtCanvas.create_text(
+            _widht_/2,_height_/2, fill="black", text=_str_, font=('Helvetica 12 bold'), anchor=CENTER)
+
 class Logo:
     def __init__(self, obj,_x_,_y_):
         self.logoCanvas = Canvas(
@@ -267,6 +278,7 @@ class Acceleration:
     def __init__(self, obj, _name_, _x_, _y_):
         self.accCanvas = Canvas(obj.window, height=150, width=30,
                                 background=obj.window['bg'],highlightbackground="black", highlightthickness=1)
+
         #Acc Level
         self.accLevel = self.accCanvas.create_rectangle(0,120,31,120, fill="#A10FF0")#sol alt,sağ üst
         self.accName = self.accCanvas.create_text(
@@ -315,7 +327,7 @@ class Log:
 def exit_func(obj):
     setFlag(1)
     obj.readData.join()
-    _LOG_FILE_.close()
+    #_LOG_FILE_.close()
     print("Closing...")
     obj.window.destroy()
 
