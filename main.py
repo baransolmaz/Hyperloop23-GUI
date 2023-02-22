@@ -58,19 +58,19 @@ class App:
         photo = PhotoImage(file="Images/logo_black.png")  # app icon
         self.window.iconphoto("false", photo)
         #
-        self.speedometer_X = Speedometer(self,"X",350,470)
-        self.speedometer_Y = Speedometer(self,"Y",550,470)
-        self.speedometer_Z = Speedometer(self,"Z",750,470)
+        self.speedometer_X = Speedometer(self,"X",350,470,25)
+        self.speedometer_Y = Speedometer(self,"Y",550,470,1)
+        self.speedometer_Z = Speedometer(self,"Z",750,470,1)
         #
         self.acceleration_txt=Name_Text(self,"Acceleration",10,450,30,110)
-        self.acceleration_X=Acceleration(self,"X",10,450)
-        self.acceleration_Y=Acceleration(self,"Y",50,450)
-        self.acceleration_Z=Acceleration(self,"Z",90,450)
+        self.acceleration_X=Acceleration(self,"X",10,450,2.2)
+        self.acceleration_Y=Acceleration(self,"Y",50,450,0.1)
+        self.acceleration_Z=Acceleration(self,"Z",90,450,0.1)
         #
         self.location_txt=Name_Text(self,"Location",300,305,25,300)
-        self.location_X = Location(self, "X", 350, 360)
-        self.location_Y = Location(self, "Y", 550, 360)
-        self.location_Z = Location(self, "Z", 750, 360)
+        self.location_X = Location(self, "X", 350, 360,186)
+        self.location_Y = Location(self, "Y", 550, 360,0.1)
+        self.location_Z = Location(self, "Z", 750, 360,0.1)
         #
         self.pyr = PYR(self, 440, 0)
         #
@@ -256,8 +256,9 @@ class Stop_Button:
         self.canvas.create_image(0, 0, image=self.photo, anchor=NW)
         self.canvas.place(x=_x_, y=_y_)
 class Speedometer:
-    def __init__(self, obj,_name_,_x_,_y_):
+    def __init__(self, obj,_name_,_x_,_y_,_max_):
         #SPEED Canvas
+        self.max_speed=_max_
         self.speedCanvas = Canvas(
             obj.window, height=100, width=200, background=obj.window['bg'], highlightthickness=0)
         self.speedometer = PhotoImage(file='Images/speedometer.png')
@@ -275,7 +276,8 @@ class Speedometer:
         self.nameTxt = self.speedCanvas.create_text(
             100, 85, fill="black", text=_name_, font=('Helvetica 12 bold'))
 class Acceleration:
-    def __init__(self, obj, _name_, _x_, _y_):
+    def __init__(self, obj, _name_, _x_, _y_,_max_):
+        self.max_acc=_max_
         self.accCanvas = Canvas(obj.window, height=150, width=30,
                                 background=obj.window['bg'],highlightbackground="black", highlightthickness=1)
 
@@ -284,11 +286,12 @@ class Acceleration:
         self.accName = self.accCanvas.create_text(
             16, 140, fill="black", text=_name_, font=('Helvetica 12 bold'))
         self.accLevelTxt = self.accCanvas.create_text(
-            16, 110, fill="black", text="0", font=('Helvetica 16 bold'))
+            16, 110, fill="black", text="0", font=('Helvetica 12 bold'))
         self.accCanvas.place(x=_x_, y=_y_,anchor=SW)
         self.level = 0
 class Location:
-    def __init__(self, obj, _name_, _x_, _y_):
+    def __init__(self, obj, _name_, _x_, _y_,_max_):
+        self.max_loc=_max_
         self.locCanvas = Canvas(obj.window, height=30, width=200,
                                 background=obj.window['bg'], highlightbackground="black", highlightthickness=1)
         self.locLevel = self.locCanvas.create_rectangle(
@@ -332,14 +335,14 @@ def exit_func(obj):
     obj.window.destroy()
 
 def changeLoc(obj):
-    for i in range(0, 80):
-        updateLocations(obj, [i, i, i])
-    for i in range(80, 40, -1):
-        updateLocations(obj, [i, i, i])
-    for i in range(40, 100):
-        updateLocations(obj, [i, i, i])
-    for i in range(100, -1, -1):
-        updateLocations(obj, [i, i, i])
+    for i in range(0, 185):
+        updateLocations(obj, [i, float(i/10000), float(i/10000)])
+    # for i in range(80, 40, -1):
+    #     updateLocations(obj, [i, i, i])
+    # for i in range(40, 100):
+    #     updateLocations(obj, [i, i, i])
+    # for i in range(100, -1, -1):
+    #     updateLocations(obj, [i, i, i])
 
 def updateLocations(obj, XYZ):
     updateLocation(obj.location_X, XYZ[0])
@@ -352,24 +355,24 @@ def updateLocation(obj, value=0):
         obj.locCanvas.delete(obj.locLevelTxt)
         obj.locCanvas.delete(obj.locLevel)
 
-        x = 30 + int(value*1.5)
-        color = colorPicker(value)
+        x = 30 + float(180.0/obj.max_loc)*(value)#maks a göre oranla
+        color = colorPicker(float(180.0/obj.max_loc)*(value))
         obj.locLevel = obj.locCanvas.create_rectangle(
             30, 31,x, 0, fill=color)
 
         obj.dist = value
         obj.locLevelTxt = obj.locCanvas.create_text(
-            45, 20, fill="black", text=str(obj.dist), font=('Helvetica 16 bold'))
+            80, 20, fill="black", text=str(obj.dist), font=('Helvetica 16 bold'))
 
-def changeAcc(obj):
-    for i in range(0, 80):
-        updateAccelerations(obj, [i, i, i])
-    for i in range(80, 40, -1):
-        updateAccelerations(obj, [i, i, i])
-    for i in range(40, 100):
-        updateAccelerations(obj, [i, i, i])
-    for i in range(100, -1, -1):
-        updateAccelerations(obj, [i, i, i])
+# def changeAcc(obj):
+#     for i in range(0, 80):
+#         updateAccelerations(obj, [i, i, i])
+#     for i in range(80, 40, -1):
+#         updateAccelerations(obj, [i, i, i])
+#     for i in range(40, 100):
+#         updateAccelerations(obj, [i, i, i])
+#     for i in range(100, -1, -1):
+#         updateAccelerations(obj, [i, i, i])
      
 def updateAccelerations(obj, XYZ):
     updateAcceleration(obj.acceleration_X, XYZ[0])
@@ -382,24 +385,24 @@ def updateAcceleration(obj, value=0):
         obj.accCanvas.delete(obj.accLevelTxt)
         obj.accCanvas.delete(obj.accLevel)
 
-        x = 120 - int(value*1.04)
-        color = colorPicker(value)
+        x = 120.0 - float((120.0/obj.max_acc)*value)
+        color = colorPicker(float((120.0/obj.max_acc)*value))
         obj.accLevel = obj.accCanvas.create_rectangle(
             0, 120, 31, x, fill=color)  # sol alt,sağ üst
 
         obj.level = value
         obj.accLevelTxt = obj.accCanvas.create_text(
-            16, 110, fill="black", text=str(obj.level), font=('Helvetica 16 bold'))
+            16, 110, fill="black", text=str(obj.level), font=('Helvetica 12 bold'))
 
-def changeSpeed(obj):
-    for i in range(0, 80):
-        updateSpeeds(obj, [i, i, i])
-    for i in range(80, 40, -1):
-        updateSpeeds(obj, [i, i, i])
-    for i in range(40, 100):
-        updateSpeeds(obj, [i, i, i])
-    for i in range(100, 0, -1):
-        updateSpeeds(obj, [i, i, i])
+# def changeSpeed(obj):
+#     for i in range(0, 80):
+#         updateSpeeds(obj, [i, i, i])
+#     for i in range(80, 40, -1):
+#         updateSpeeds(obj, [i, i, i])
+#     for i in range(40, 100):
+#         updateSpeeds(obj, [i, i, i])
+#     for i in range(100, 0, -1):
+#         updateSpeeds(obj, [i, i, i])
 
 def updateSpeeds(obj,XYZ):
     updateSpeed(obj.speedometer_X, XYZ[0])
@@ -409,26 +412,27 @@ def updateSpeeds(obj,XYZ):
 
 def updateSpeed(obj, speed=0):
     if (obj.angle < 270) or (obj.angle > 90):
-        obj.angle = 90 + 1.8*speed
+        obj.angle = 90.0 + float(1800.0/obj.max_speed)*speed/10
         #obj.angle += 1.8
         x = 100 - 100*math.sin(math.radians(obj.angle))
         y = 100 + 100*math.cos(math.radians(obj.angle))
         obj.speedCanvas.delete(obj.speedTxt)
         obj.speedCanvas.delete(obj.speedArrow)
-        obj.speedTxt = obj.speedCanvas.create_text(100, 65, fill="black", text=str(
-            int((obj.angle-90)/1.8)), font=('Helvetica 20 bold'))
+        obj.speedTxt = obj.speedCanvas.create_text(100, 65, fill="black",
+                        text="{:.2f}".format(speed),
+            font=('Helvetica 20 bold'))
         obj.speedArrow = obj.speedCanvas.create_line(
             100, 100, 0 + x, y, arrow=LAST, width=5, fill="blue")
 
-def changeThermo(obj):
-    for i in range(0, 80):
-        updateThermos(obj, [i, i])
-    for i in range(80, 40, -1):
-        updateThermos(obj, [i, i])
-    for i in range(40, 100):
-        updateThermos(obj, [i, i])
-    for i in range(100, 0, -1):
-        updateThermos(obj, [i, i])
+# def changeThermo(obj):
+#     for i in range(0, 80):
+#         updateThermos(obj, [i, i])
+#     for i in range(80, 40, -1):
+#         updateThermos(obj, [i, i])
+#     for i in range(40, 100):
+#         updateThermos(obj, [i, i])
+#     for i in range(100, 0, -1):
+#         updateThermos(obj, [i, i])
         
 def updateThermos(obj,XY):
     updateThermo(obj.thermometer1, XY[0])
@@ -446,53 +450,53 @@ def updateThermo(obj ,val=0):
     obj.thermoTxt = obj.thermoCanvas.create_text(
         80, 85, fill="black", text=str(val), font=('Helvetica 15 bold'))
   
-def changePower(obj):
-    for i in range(0, 80):
-        updatePower(obj.power, i)
-        obj.window.update()
-    for i in range(80, 40, -1):
-        updatePower(obj.power, i)
-        obj.window.update()
-    for i in range(40, 100):
-        updatePower(obj.power, i)
-        obj.window.update()
-    for i in range(100, 0, -1):
-        updatePower(obj.power, i)
-        obj.window.update()
+# def changePower(obj):
+#     for i in range(0, 80):
+#         updatePower(obj.power, i)
+#         obj.window.update()
+#     for i in range(80, 40, -1):
+#         updatePower(obj.power, i)
+#         obj.window.update()
+#     for i in range(40, 100):
+#         updatePower(obj.power, i)
+#         obj.window.update()
+#     for i in range(100, 0, -1):
+#         updatePower(obj.power, i)
+#         obj.window.update()
       
 def updatePower(obj, value=0):
     obj.powerCanvas.delete(obj.p_txt)
     obj.p_txt = obj.powerCanvas.create_text(
         60, 80, fill="black", text=str(value)+" W", font=('Helvetica 12 bold'), anchor=NW)
     
-def changePressure(obj):
-    for i in range(0, 80):
-        updatePressure(obj.pressure, i)
-        obj.window.update()
-    for i in range(80, 40, -1):
-        updatePressure(obj.pressure, i)
-        obj.window.update()
-    for i in range(40, 100):
-        updatePressure(obj.pressure, i)
-        obj.window.update()
-    for i in range(100, 0, -1):
-        updatePressure(obj.pressure, i)
-        obj.window.update()
+# def changePressure(obj):
+#     for i in range(0, 80):
+#         updatePressure(obj.pressure, i)
+#         obj.window.update()
+#     for i in range(80, 40, -1):
+#         updatePressure(obj.pressure, i)
+#         obj.window.update()
+#     for i in range(40, 100):
+#         updatePressure(obj.pressure, i)
+#         obj.window.update()
+#     for i in range(100, 0, -1):
+#         updatePressure(obj.pressure, i)
+#         obj.window.update()
 
 def updatePressure(obj, value=0):
     obj.pressureCanvas.delete(obj.p_txt)
     obj.p_txt = obj.pressureCanvas.create_text(
         50, 75,fill="black", text=str(value), font=('Helvetica 12 bold'))
       
-def changePYR(obj):
-    for i in range(0, 80):
-        updatePYRs(obj, [i, i,i])
-    for i in range(80, 40, -1):
-        updatePYRs(obj, [i, i,i])
-    for i in range(40, 100):
-        updatePYRs(obj, [i, i,i])
-    for i in range(100, 0, -1):
-        updatePYRs(obj, [i, i,i])
+# def changePYR(obj):
+#     for i in range(0, 80):
+#         updatePYRs(obj, [i, i,i])
+#     for i in range(80, 40, -1):
+#         updatePYRs(obj, [i, i,i])
+#     for i in range(40, 100):
+#         updatePYRs(obj, [i, i,i])
+#     for i in range(100, 0, -1):
+#         updatePYRs(obj, [i, i,i])
 
 def updatePYRs(obj, XYZ):
     updatePYR(obj.pyr, XYZ)
@@ -509,9 +513,9 @@ def updatePYR(obj, XYZ):
     obj.r_txt = obj.pyrCanvas.create_text(
         100, 60, fill="black", text="Roll  : "+str(XYZ[2]), font=('Helvetica 12 bold'), anchor=NW)
 
-def changeLog(obj):
-    for i in range(0,18000):
-        updateLog(obj.log,str(i))
+# def changeLog(obj):
+#     for i in range(0,18000):
+#         updateLog(obj.log,str(i))
         
 def updateLog(obj,text):
     obj.log.configure(state="normal")
@@ -540,7 +544,7 @@ def getFlag():
 
 def setFlag(i):
     global _END_FLAG_
-    _END_FLAG_ = 1
+    _END_FLAG_ = 1      
 
 def set_HOST_(val):
     global _HOST_
@@ -561,8 +565,8 @@ def valf_signal(obj):
         print("No Client")
      
 def changeAll(obj):
-    for i in range(0,50):
-        updateAll(obj,[i,i,i,i,i,i,i,i,i,i,i,i,i,i,i])
+    for i in range(0,100):
+        updateAll(obj,[i/100,i/1000,i/1000,i+1,i+1,i+1,(i+2)%25,(i+2)/10,(i+2)/10,i+3,i+3,i+3,i+4,i+4,i+4])
     
 def updateAll(obj,params):
     updateLog(obj.log,params)
@@ -590,12 +594,8 @@ if __name__ == '__main__':
             else:
                 break
     app = App()
-    app.appendFile("deneme123")
-    app.appendFile("deneme129")
-    app.appendFile("deneme12311")
-    app.window.bind("<Up>", lambda event, obj=app: {changeLoc(obj), changeAcc(
-        obj), changeSpeed(obj), changeThermo(obj),changePressure(obj),changePYR(obj),changeLog(obj)})
     app.window.bind("<Down>", lambda event, obj=app:changeAll(obj))
+    app.window.bind("<Up>", lambda event, obj=app:changeLoc(obj))
     '''app.stop_button.canvas.bind(
         "<Button-1>", lambda event, obj=app: stop_signal(obj))
     app.valf_button.canvas.bind(
