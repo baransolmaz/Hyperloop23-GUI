@@ -11,8 +11,8 @@ from datetime import datetime
 _END_FLAG_ = 0
 # _PORT_ = '/dev/ttyUSB0'
 
-_HOST_ = '192.168.1.7'  # The server's hostname or IP address
-_PORT_ = 7895  # The port used by the server
+_HOST_ = '192.168.10.10'  # The server's hostname or IP address
+_PORT_ = 8523  # The port used by the server
 
 _LOG_FILE_NAME_ = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
 open("Logs/"+_LOG_FILE_NAME_+".txt","x")
@@ -57,6 +57,7 @@ class App:
         self.window.config(background="#276FBF")
         photo = PhotoImage(file="Images/logo_black.png")  # app icon
         self.window.iconphoto("false", photo)
+        self.appendFile("Ivme 3,Konum 3,Hiz 3,PYR 3,Sicaklik 2,Basinc")
         #
         self.speedometer_X = Speedometer(self,"X",350,470,25)
         self.speedometer_Y = Speedometer(self,"Y",550,470,1)
@@ -149,9 +150,11 @@ class App:
                         data = self.conn.recv(1024).decode()
                         time2 = time.time()
                         print(time2-time1)
+                        if getFlag() != 0:
+                            break
                         print("Received Data: " + str(data))
                         self.appendFile(str(data))
-                        #changeAll(app)
+                        updateAll(app,data.split(","))
                         pass  # While a devam eder
                     except:
                         print("CONNECTION LOST")
@@ -159,7 +162,7 @@ class App:
 
                 self.conn.close()  # close the connection
 
-    
+'''   
     # def readAndParseDATA(self):#LoRa
     #     while(getFlag() == 0):
     #         try:
@@ -181,7 +184,8 @@ class App:
     #                 # if paket == '3':  # direksiyon + konum
     #                 #     paket3(self, datas[1])
     #             self.serialCon.close()
-    
+'''
+  
 class Name_Text:
     def __init__(self,obj,_str_,_x_,_y_,_height_,_widht_):
         self.txtCanvas = Canvas(
@@ -326,17 +330,15 @@ class Log:
         self.log.vbar.configure(bg="black")
         self.log.place(x=_x_,y=_y_)
 
-
 def exit_func(obj):
     setFlag(1)
     obj.readData.join()
-    #_LOG_FILE_.close()
     print("Closing...")
     obj.window.destroy()
 
-def changeLoc(obj):
-    for i in range(0, 185):
-        updateLocations(obj, [i, float(i/10000), float(i/10000)])
+# def changeLoc(obj):
+#     for i in range(0, 185):
+#         updateLocations(obj, [i, float(i/10000), float(i/10000)])
     # for i in range(80, 40, -1):
     #     updateLocations(obj, [i, i, i])
     # for i in range(40, 100):
@@ -351,6 +353,7 @@ def updateLocations(obj, XYZ):
     obj.window.update()
 
 def updateLocation(obj, value=0):
+    value = float(value)
     if (obj.dist > 0) or (obj.dist < 100):
         obj.locCanvas.delete(obj.locLevelTxt)
         obj.locCanvas.delete(obj.locLevel)
@@ -381,6 +384,7 @@ def updateAccelerations(obj, XYZ):
     obj.window.update()
 
 def updateAcceleration(obj, value=0):
+    value= float(value)
     if (obj.level > 0) or (obj.level < 100):
         obj.accCanvas.delete(obj.accLevelTxt)
         obj.accCanvas.delete(obj.accLevel)
@@ -411,6 +415,7 @@ def updateSpeeds(obj,XYZ):
     obj.window.update()
 
 def updateSpeed(obj, speed=0):
+    speed = float(speed)
     if (obj.angle < 270) or (obj.angle > 90):
         obj.angle = 90.0 + float(1800.0/obj.max_speed)*speed/10
         #obj.angle += 1.8
@@ -440,6 +445,7 @@ def updateThermos(obj,XY):
     obj.window.update()
     
 def updateThermo(obj ,val=0):
+    val = float(val)
     img = obj.thermometer[0]
     if val > 40:
         img = obj.thermometer[1]
@@ -465,6 +471,7 @@ def updateThermo(obj ,val=0):
 #         obj.window.update()
       
 def updatePower(obj, value=0):
+    value = float(value)
     obj.powerCanvas.delete(obj.p_txt)
     obj.p_txt = obj.powerCanvas.create_text(
         60, 80, fill="black", text=str(value)+" W", font=('Helvetica 12 bold'), anchor=NW)
@@ -484,6 +491,7 @@ def updatePower(obj, value=0):
 #         obj.window.update()
 
 def updatePressure(obj, value=0):
+    value = float(value)
     obj.pressureCanvas.delete(obj.p_txt)
     obj.p_txt = obj.pressureCanvas.create_text(
         50, 75,fill="black", text=str(value), font=('Helvetica 12 bold'))
@@ -557,10 +565,17 @@ def stop_signal(obj):
     else:
         print("No Client")
 
-def valf_signal(obj):
+def levitation_signal(obj):
     if obj.conn != -1:
-        print("VALF")
-        obj.conn.send("valf".encode())
+        print("LEVITATION")
+        obj.conn.send("levitation".encode())
+    else:
+        print("No Client")
+
+def impulse_signal(obj):
+    if obj.conn != -1:
+        print("IMPULSE")
+        obj.conn.send("impulse".encode())
     else:
         print("No Client")
      
@@ -568,13 +583,28 @@ def changeAll(obj):
     for i in range(0,100):
         updateAll(obj,[i/100,i/1000,i/1000,i+1,i+1,i+1,(i+2)%25,(i+2)/10,(i+2)/10,i+3,i+3,i+3,i+4,i+4,i+4])
     
-def updateAll(obj,params):
+
+def updateAll(obj, params): 
+    if getFlag() != 0:
+        return
     updateLog(obj.log,params)
+    if getFlag() != 0:
+        return
     updateAccelerations(obj,params[0:3])
+    if getFlag() != 0:
+        return
     updateLocations(obj,params[3:6])
+    if getFlag() != 0:
+        return
     updateSpeeds(obj, params[6:9])
+    if getFlag() != 0:
+        return
     updatePYRs(obj, params[9:12])
+    if getFlag() != 0:
+        return
     updateThermos(obj, params[12:14])
+    if getFlag() != 0:
+        return
     updatePressure(obj.pressure, params[14])
     #updatePower(obj.power, params[14])
     obj.window.update()
@@ -595,12 +625,12 @@ if __name__ == '__main__':
                 break
     app = App()
     app.window.bind("<Down>", lambda event, obj=app:changeAll(obj))
-    app.window.bind("<Up>", lambda event, obj=app:changeLoc(obj))
-    '''app.stop_button.canvas.bind(
+    # app.window.bind("<Up>", lambda event, obj=app:changeLoc(obj))
+    app.stop_button.canvas.bind(
         "<Button-1>", lambda event, obj=app: stop_signal(obj))
-    app.valf_button.canvas.bind(
-        "<Button-1>", lambda event, obj=app: valf_signal(obj))
-    app.valf_button.canvas.bind(
-        "<Button-1>", lambda event, obj=app: valf_signal(obj))'''
+    app.lev_button.canvas.bind(
+        "<Button-1>", lambda event, obj=app: levitation_signal(obj))
+    app.impulse_button.canvas.bind(
+        "<Button-1>", lambda event, obj=app: impulse_signal(obj))
     app.window.protocol('WM_DELETE_WINDOW', lambda obj=app: exit_func(obj))
     app.window.mainloop()
