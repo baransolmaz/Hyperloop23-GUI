@@ -2,14 +2,14 @@ import math
 from tkinter import *
 from tkinter.ttk import *
 import tkinter.scrolledtext as ST
-#import serial
+import serial
 import time
 import threading as thread
 import socket
 from datetime import datetime
 
 _END_FLAG_ = 0
-# _PORT_ = '/dev/ttyUSB0'
+_USB_PORT_ = '/dev/ttyUSB0'
 
 _HOST_ = '192.168.9.3'  # The server's hostname or IP address
 _PORT_ = 5656  # The port used by the server
@@ -96,10 +96,10 @@ class App:
         #
         self.pressure = Pressure(self, 285, 0) #Pressure(self, 330, 0)
 
-        self.socket = self.create_socket()
+        #self.socket = self.create_socket()
 
         self.conn, self.addr = -1, -1
-        self.readData = thread.Thread(target=self.readAndParseDATA)
+        self.readData = thread.Thread(target=self.readAndParseDATA_LORA)
         self.readData.start()
         self.data = ""
 
@@ -110,22 +110,22 @@ class App:
         server_socket.bind((_HOST_, _PORT_))
         server_socket.listen(2)
         return server_socket
-    # def connectUSB(self):
-    #     ser = serial.Serial(
-    #         # Serial Port to read the data from
-    #         port=_PORT_,
-    #         #Rate at which the information is shared to the communication channel
-    #         baudrate=9600,
-    #         #Applying Parity Checking (none in this case)
-    #         parity=serial.PARITY_NONE,
-    #         # Pattern of Bits to be read
-    #         stopbits=serial.STOPBITS_ONE,
-    #         # Total number of bits to be read
-    #         bytesize=serial.EIGHTBITS,
-    #         # Number of serial commands to accept before timing out
-    #         timeout=1
-    #     )
-    #     return ser
+    def connectUSB(self):
+        ser = serial.Serial(
+            # Serial Port to read the data from
+            port=_USB_PORT_,
+            #Rate at which the information is shared to the communication channel
+            baudrate=9600,
+            #Applying Parity Checking (none in this case)
+            parity=serial.PARITY_NONE,
+            # Pattern of Bits to be read
+            stopbits=serial.STOPBITS_ONE,
+            # Total number of bits to be read
+            bytesize=serial.EIGHTBITS,
+            # Number of serial commands to accept before timing out
+            timeout=1
+        )
+        return ser
 
     def appendFile(self, recived_data):
         _LOG_FILE_ = open("Logs/"+_LOG_FILE_NAME_+".txt", "a")
@@ -166,31 +166,33 @@ class App:
                         break  # while dan cikar tekrar bağlanti bekler
 
                 self.conn.close()  # close the connection
+  
+    def readAndParseDATA_LORA(self):#LoRa
+        while(getFlag() == 0):
+            try:
+                print("Trying to connect USB Port...")
+                self.serialCon = self.connectUSB()
+            except Exception as e :#serial.SerialException:
+                print(e)
+                # print("Trying again...")
+                time.sleep(3)
+                pass
+            else:
+                print("Connected...\n")
+                while(getFlag() == 0):
+                    x = self.serialCon.readline()
+                    print(x)
+                    #datas = str(x).split(":")
+                    #paket = datas[0][2:4]
+                    # if paket == '1':  # Battery 0 - 12
+                    #     paket1(self, datas[1])
+                    # # Battery 12 - 18  + Left -Right Signal +Motor +Leakage Signal+Amper+Volt+pil Temp.
+                    # if paket == '2':
+                    #     paket2(self, datas[1])
+                    # if paket == '3':  # direksiyon + konum
+                    #     paket3(self, datas[1])
+        self.serialCon.close()
 
-
-'''   
-    # def readAndParseDATA(self):#LoRa
-    #     while(getFlag() == 0):
-    #         try:
-    #             self.serialCon = self.connectUSB()
-    #         except serial.SerialException:
-    #             time.sleep(3)
-    #             pass
-    #         else:
-    #             while(getFlag() == 0):
-    #                 x = self.serialCon.readline()
-    #                 #print(x)
-    #                 datas = str(x).split(":")
-    #                 paket = datas[0][2:4]
-    #                 # if paket == '1':  # Battery 0 - 12
-    #                 #     paket1(self, datas[1])
-    #                 # # Battery 12 - 18  + Left -Right Signal +Motor +Leakage Signal+Amper+Volt+pil Temp.
-    #                 # if paket == '2':
-    #                 #     paket2(self, datas[1])
-    #                 # if paket == '3':  # direksiyon + konum
-    #                 #     paket3(self, datas[1])
-    #             self.serialCon.close()
-'''
 
 
 class Name_Text:
@@ -686,7 +688,7 @@ def getIP(txt):
         
 
 if __name__ == '__main__':
-    getIP('Insert Your IP:')
+    #getIP('Insert Your IP:')
     app = App()
     # app.window.bind("<Down>", lambda event, obj=app: changeAll(obj))
     # app.window.bind("<Up>", lambda event, obj=app:changeLoc(obj))
