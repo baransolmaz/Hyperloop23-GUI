@@ -8,6 +8,7 @@ import threading as thread
 import socket
 from datetime import datetime
 
+_COM_TYPE_ = 0 # 0 For Lora , 1 For Eth
 _END_FLAG_ = 0
 _USB_PORT_ = '/dev/ttyUSB0'
 
@@ -15,7 +16,7 @@ _HOST_ = '192.168.9.3'  # The server's hostname or IP address
 _PORT_ = 5656  # The port used by the server
 
 _LOG_FILE_NAME_ = datetime.now().strftime("%d.%m.%Y %H:%M:%S") # Get Current Date
-open("Logs/"+_LOG_FILE_NAME_+".txt", "x") #Create File
+#open("Logs/"+_LOG_FILE_NAME_+".txt", "x") #Create File
 
 
 class Dialog:
@@ -53,13 +54,17 @@ class App:
         self.window = Tk()
         self.window.geometry("750x470")  # Screen Size(yatay x dikey)
         self.window.resizable(0, 0)
-        self.window.title("ALFA ETA-H")  # Pencere ismi
-        #self.window.title("ALFA ETA-H "+_HOST_)  # Pencere ismi
+        
+        if getComType() == 0:
+            self.window.title("ALFA ETA-H")  # Pencere ismi
+        else:
+            self.window.title("ALFA ETA-H "+_HOST_)  # Pencere ismi
+            
         self.window.iconname("ALFA ETA-H")
         self.window.config(background="#276FBF")
         photo = PhotoImage(file="Images/logo_black.png")  # app icon
         self.window.iconphoto("false", photo)
-        self.appendFile("Ivme X,Ivme Y,Ivme Z,Konum X,Konum Y,Konum Z,Hiz X,Hiz Y,Hiz Z,PYR 3,Sicaklik 2,Basinc")
+    #self.appendFile("Ivme X,Ivme Y,Ivme Z,Konum X,Konum Y,Konum Z,Hiz X,Hiz Y,Hiz Z,PYR 3,Sicaklik 2,Basinc")
         #
         self.speedometer_X = Speedometer(self, "X", 350, 470, 25)
         self.speedometer_Y = Speedometer(self, "Y", 550, 470, 1)
@@ -89,17 +94,23 @@ class App:
         self.lev_button = Levitation_Button(self, 640, 105)
         self.impulse_button = Impulse_Button(self, 640, 210)
         
-        '''self.ip_get_button = IP_Button(self, 320,110,0)
-        self.ip_send_button = IP_Button(self,420,110,1)'''
+        if getComType()==1:
+            self.ip_get_button = IP_Button(self, 320,110,0)
+            self.ip_send_button = IP_Button(self,420,110,1)
+            self.socket = self.create_socket()
         #
         # self.power=Power(self,230,0)
         #
         self.pressure = Pressure(self, 285, 0) #Pressure(self, 330, 0)
 
-        #self.socket = self.create_socket()
 
-        self.conn, self.addr = -1, -1
-        self.readData = thread.Thread(target=self.readAndParseDATA_LORA)
+        if getComType()==0:
+            self.conn =serial.Serial()
+            self.readData = thread.Thread(target=self.readAndParseDATA_LORA)
+            #print(self.conn.is_open)#####
+        else:
+            self.conn, self.addr = -1, -1
+            self.readData = thread.Thread(target=self.readAndParseDATA)
         self.readData.start()
         self.data = ""
 
@@ -171,7 +182,7 @@ class App:
         while(getFlag() == 0):
             try:
                 print("Trying to connect USB Port...")
-                self.serialCon = self.connectUSB()
+                self.conn = self.connectUSB()
             except Exception as e :#serial.SerialException:
                 print(e)
                 # print("Trying again...")
@@ -180,9 +191,9 @@ class App:
             else:
                 print("Connected...\n")
                 while(getFlag() == 0):
-                    x = self.serialCon.readline()
-                    print(x)
-                    #datas = str(x).split(":")
+                    data = self.conn.readline()
+                    print(data)
+                    #datas = str(data).split(":")
                     #paket = datas[0][2:4]
                     # if paket == '1':  # Battery 0 - 12
                     #     paket1(self, datas[1])
@@ -191,8 +202,7 @@ class App:
                     #     paket2(self, datas[1])
                     # if paket == '3':  # direksiyon + konum
                     #     paket3(self, datas[1])
-        self.serialCon.close()
-
+        self.conn.close()
 
 
 class Name_Text:
@@ -600,6 +610,10 @@ def getFlag():
     return _END_FLAG_
 
 
+def getComType():
+    global _COM_TYPE_
+    return _COM_TYPE_
+
 def setFlag(i):
     global _END_FLAG_
     _END_FLAG_ = 1
@@ -611,27 +625,48 @@ def set_HOST_(val):
 
 
 def stop_signal(obj):
-    if obj.conn != -1:
-        print("STOP")
-        obj.conn.send("stop".encode())
+    if getComType()==0:
+        if obj.conn.is_open:
+            obj.conn.write("stop".encode())
+            print("STOP")
+        else:
+            print("No Client")
     else:
-        print("No Client")
+        if obj.conn != -1:
+            print("STOP")
+            obj.conn.send("stop".encode())
+        else:
+            print("No Client")
 
 
 def levitation_signal(obj):
-    if obj.conn != -1:
-        print("LEVITATION")
-        obj.conn.send("levitation".encode())
+    if getComType() == 0:
+        if obj.conn.is_open:
+            obj.conn.write("levitation".encode())
+            print("LEVITATION")
+        else:
+            print("No Client")
     else:
-        print("No Client")
+        if obj.conn != -1:
+            print("LEVITATION")
+            obj.conn.send("levitation".encode())
+        else:
+            print("No Client")
 
 
 def impulse_signal(obj):
-    if obj.conn != -1:
-        print("IMPULSE")
-        obj.conn.send("impulse".encode())
+    if getComType() == 0:
+        if obj.conn.is_open:
+            obj.conn.write("impulse".encode())
+            print("IMPULSE")
+        else:
+            print("No Client")
     else:
-        print("No Client")
+        if obj.conn != -1:
+            print("IMPULSE")
+            obj.conn.send("impulse".encode())
+        else:
+            print("No Client")
         
 def change_ip_signal(obj):
     if obj.conn != -1:
@@ -641,10 +676,10 @@ def change_ip_signal(obj):
         print("No Client")
 
 
-def changeAll(obj):
-    for i in range(0, 100):
-        updateAll(obj, [i/100, i/1000, i/1000, i+1, i+1, i+1, (i+2) %
-                  25, (i+2)/10, (i+2)/10, i+3, i+3, i+3, i+4, i+4, i+4])
+# def changeAll(obj):
+#     for i in range(0, 100):
+#         updateAll(obj, [i/100, i/1000, i/1000, i+1, i+1, i+1, (i+2) %
+#                   25, (i+2)/10, (i+2)/10, i+3, i+3, i+3, i+4, i+4, i+4])
 
 
 def updateAll(obj, params):
@@ -688,7 +723,8 @@ def getIP(txt):
         
 
 if __name__ == '__main__':
-    #getIP('Insert Your IP:')
+    if getComType()==1:
+        getIP('Insert Your IP:')
     app = App()
     # app.window.bind("<Down>", lambda event, obj=app: changeAll(obj))
     # app.window.bind("<Up>", lambda event, obj=app:changeLoc(obj))
@@ -698,9 +734,10 @@ if __name__ == '__main__':
         "<Button-1>", lambda event, obj=app: levitation_signal(obj))
     app.impulse_button.canvas.bind(
         "<Button-1>", lambda event, obj=app: impulse_signal(obj))
-    '''app.ip_get_button.canvas.bind(
-        "<Button-1>", lambda event, obj=app: getIP("New IP:"))
-    app.ip_send_button.canvas.bind(
-        "<Button-1>", lambda event, obj=app: change_ip_signal(obj))'''
+    if getComType()==1:
+        app.ip_get_button.canvas.bind(
+            "<Button-1>", lambda event, obj=app: getIP("New IP:"))
+        app.ip_send_button.canvas.bind(
+            "<Button-1>", lambda event, obj=app: change_ip_signal(obj))
     app.window.protocol('WM_DELETE_WINDOW', lambda obj=app: exit_func(obj))
     app.window.mainloop()
