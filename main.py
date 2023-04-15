@@ -7,8 +7,8 @@ import time
 import threading as thread
 import socket
 from datetime import datetime
-
-_COM_TYPE_ = 0 # 0 For Lora , 1 For Eth
+import re
+_COM_TYPE_ = 1 # 0 For Lora , 1 For Eth
 _END_FLAG_ = 0
 _USB_PORT_ = '/dev/ttyUSB0'
 
@@ -18,11 +18,10 @@ _PORT_ = 5656  # The port used by the server
 _LOG_FILE_NAME_ = datetime.now().strftime("%d.%m.%Y %H:%M:%S") # Get Current Date
 #open("Logs/"+_LOG_FILE_NAME_+".txt", "x") #Create File
 
-
 class Dialog:
     def __init__(self,txt):
         self.root = Tk()
-        self.root.title("ALFA ETA-H")
+        self.root.title("ALFA ETA-H")  
         canvas1 = Canvas(self.root, width=300, height=100,  relief='raised')
         canvas1.pack()
 
@@ -46,9 +45,17 @@ class Dialog:
             self.root.destroy()
 
         button1 = Button(self.root,text='Insert', command=getEntry)
+        entry1.bind("<Return>", lambda e: getEntry())
         canvas1.create_window(150, 75, window=button1)
 
-
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        self.root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+        self.root.mainloop()
+        
 class App:
     def __init__(self):
         self.window = Tk()
@@ -192,19 +199,38 @@ class App:
                 print("Connected...\n")
                 while(getFlag() == 0):
                     data = self.conn.readline()
+                    # bufferBytes = self.conn.in_waiting
+                    # if bufferBytes:
+                    #      data = data + self.conn.read(bufferBytes)
                     print(data)
-                    #datas = str(data).split(":")
-                    #paket = datas[0][2:4]
-                    # if paket == '1':  # Battery 0 - 12
-                    #     paket1(self, datas[1])
-                    # # Battery 12 - 18  + Left -Right Signal +Motor +Leakage Signal+Amper+Volt+pil Temp.
-                    # if paket == '2':
-                    #     paket2(self, datas[1])
-                    # if paket == '3':  # direksiyon + konum
-                    #     paket3(self, datas[1])
+                    datalist = DecToStringArr(data.decode())
+                    print(len(datalist))
+                    if len(datalist) == 0:
+                       continue
+                    print(datalist[0])
+                    if getFlag() != 0:
+                        break
+                    #print("Received Data: "+ " ".join(data))
+                    #self.appendFile(str(data))
+                    #updateAll(app, data)
         self.conn.close()
 
 
+def DecToStringArr(arr):
+    result=[]
+    # arr=arr[:-4]
+    # print(arr)
+    if len(arr)==0:
+        return result
+    pattern = re.compile(r"(?<=40)(.*?)(?=41)")
+    if chr(int(arr[:2],10))=='(' and chr(int(arr[-2:],10))==')':
+        matches = pattern.findall(arr[2:-2])
+        for k in matches:
+            strV=""
+            for i in range(0,len(k),2):
+                strV += chr(int(k[i:i+2], 10))
+            result.append(strV)
+    return result
 class Name_Text:
     def __init__(self, obj, _str_, _x_, _y_, _height_, _widht_):
         self.txtCanvas = Canvas(
@@ -213,7 +239,6 @@ class Name_Text:
         self.p_txt = self.txtCanvas.create_text(
             _widht_/2, _height_/2, fill="black", text=_str_, font=('Helvetica 12 bold'), anchor=CENTER)
 
-
 class Logo:
     def __init__(self, obj, _x_, _y_):
         self.logoCanvas = Canvas(
@@ -221,7 +246,6 @@ class Logo:
         self.photo = PhotoImage(file="Images/logo_blue.png")
         self.logoCanvas.create_image(0, 0, image=self.photo, anchor=NW)
         self.logoCanvas.place(x=_x_, y=_y_)
-
 
 class PYR:
     def __init__(self, obj, _x_, _y_):
@@ -237,7 +261,6 @@ class PYR:
         self.r_txt = self.pyrCanvas.create_text(
             100, 60, fill="black", text="Roll  : 0", font=('Helvetica 12 bold'), anchor=NW)
 
-
 class Power:
     def __init__(self, obj, _x_, _y_):
         self.powerCanvas = Canvas(
@@ -247,7 +270,6 @@ class Power:
         self.powerCanvas.create_image(0, 0, image=self.photo, anchor=NW)
         self.p_txt = self.powerCanvas.create_text(
             60, 80, fill="black", text="0 W", font=('Helvetica 12 bold'), anchor=NW)
-
 
 class Pressure:
     def __init__(self, obj, _x_, _y_):
@@ -261,7 +283,6 @@ class Pressure:
         self.p_txt = self.pressureCanvas.create_text(
             50, 75, fill="black", text="0", font=('Helvetica 12 bold'))
 
-
 class Impulse_Button:
     def __init__(self, obj, _x_, _y_):
         self.canvas = Canvas(obj.window, height=100, width=102,
@@ -271,7 +292,6 @@ class Impulse_Button:
         self.canvas.create_text(
             51, 35, fill="black", text="Impulse", font=('Helvetica 8 bold'))
         self.canvas.place(x=_x_, y=_y_)
-
 
 class IP_Button:
     def __init__(self, obj, _x_, _y_,type):
@@ -292,7 +312,6 @@ class Levitation_Button:
             51, 85, fill="black", text="Levitation", font=('Helvetica 10 bold'))
         self.canvas.place(x=_x_, y=_y_)
 
-
 class Stop_Button:
     def __init__(self, obj, _x_, _y_):
         self.canvas = Canvas(obj.window, height=100, width=100,
@@ -300,7 +319,6 @@ class Stop_Button:
         self.photo = PhotoImage(file="Images/stop.png")
         self.canvas.create_image(0, 0, image=self.photo, anchor=NW)
         self.canvas.place(x=_x_, y=_y_)
-
 
 class Speedometer:
     def __init__(self, obj, _name_, _x_, _y_, _max_):
@@ -324,7 +342,6 @@ class Speedometer:
         self.nameTxt = self.speedCanvas.create_text(
             100, 85, fill="black", text=_name_, font=('Helvetica 12 bold'))
 
-
 class Acceleration:
     def __init__(self, obj, _name_, _x_, _y_, _max_):
         self.max_acc = _max_
@@ -341,7 +358,6 @@ class Acceleration:
         self.accCanvas.place(x=_x_, y=_y_, anchor=SW)
         self.level = 0
 
-
 class Location:
     def __init__(self, obj, _name_, _x_, _y_, _max_):
         self.max_loc = _max_
@@ -356,7 +372,6 @@ class Location:
         self.locCanvas.place(x=_x_, y=_y_, anchor=SE)
         self.dist = 0
 
-
 class ThermoSignal:
     def __init__(self, obj, _name_, _x_, _y_):
         self.thermometer = [PhotoImage(
@@ -370,7 +385,6 @@ class ThermoSignal:
             80, 85, fill="black", text="0", font=('Helvetica 15 bold'))
         self.thermoName = self.thermoCanvas.create_text(
             80, 65, fill="black", text=_name_, font=('Helvetica 15 bold'))
-
 
 class Log:
     def __init__(self, obj, _x_, _y_):
@@ -396,7 +410,6 @@ def updateLocations(obj, XYZ):
     updateLocation(obj.location_Y, XYZ[1])
     updateLocation(obj.location_Z, XYZ[2])
     obj.window.update()
-
 
 def updateLocation(obj, value=0):
     value = float(value)
@@ -618,11 +631,9 @@ def setFlag(i):
     global _END_FLAG_
     _END_FLAG_ = 1
 
-
 def set_HOST_(val):
     global _HOST_
     _HOST_ = val
-
 
 def stop_signal(obj):
     if getComType()==0:
@@ -638,7 +649,6 @@ def stop_signal(obj):
         else:
             print("No Client")
 
-
 def levitation_signal(obj):
     if getComType() == 0:
         if obj.conn.is_open:
@@ -652,7 +662,6 @@ def levitation_signal(obj):
             obj.conn.send("levitation".encode())
         else:
             print("No Client")
-
 
 def impulse_signal(obj):
     if getComType() == 0:
@@ -675,12 +684,10 @@ def change_ip_signal(obj):
     else:
         print("No Client")
 
-
 # def changeAll(obj):
 #     for i in range(0, 100):
 #         updateAll(obj, [i/100, i/1000, i/1000, i+1, i+1, i+1, (i+2) %
 #                   25, (i+2)/10, (i+2)/10, i+3, i+3, i+3, i+4, i+4, i+4])
-
 
 def updateAll(obj, params):
     if getFlag() != 0:
@@ -721,7 +728,6 @@ def getIP(txt):
             else:
                 break
         
-
 if __name__ == '__main__':
     if getComType()==1:
         getIP('Insert Your IP:')
