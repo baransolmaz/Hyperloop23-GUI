@@ -16,7 +16,9 @@ _HOST_ = '192.168.9.3'  # The server's hostname or IP address
 _PORT_ = 5656  # The port used by the server
 
 _LOG_FILE_NAME_ = datetime.now().strftime("%d.%m.%Y %H:%M:%S") # Get Current Date
-#open("Logs/"+_LOG_FILE_NAME_+".txt", "x") #Create File
+open("Logs/"+_LOG_FILE_NAME_+".csv", "x") #Create File
+
+_DIRECTION_=-1
 
 class Dialog:
     def __init__(self,txt):
@@ -46,7 +48,7 @@ class Dialog:
 
         button1 = Button(self.root,text='Insert', command=getEntry)
         entry1.bind("<Return>", lambda e: getEntry())
-        canvas1.create_window(150, 75, window=button1)
+        canvas1.create_window(150, 80, window=button1)
 
         self.root.update_idletasks()
         width = self.root.winfo_width()
@@ -72,6 +74,7 @@ class App:
         photo = PhotoImage(file="Images/logo_black.png")  # app icon
         self.window.iconphoto("false", photo)
     #self.appendFile("Ivme X,Ivme Y,Ivme Z,Konum X,Konum Y,Konum Z,Hiz X,Hiz Y,Hiz Z,PYR 3,Sicaklik 2,Basinc")
+        self.appendFile("Zaman(sn),Ivme,Hiz,Konum")
         #
         self.speedometer_X = Speedometer(self, "X", 350, 470, 25)
         self.speedometer_Y = Speedometer(self, "Y", 550, 470, 1)
@@ -88,33 +91,33 @@ class App:
         self.location_Y = Location(self, "Y", 550, 360, 0.1)
         self.location_Z = Location(self, "Z", 750, 360, 0.1)
         #
-        self.pyr = PYR(self, 420, 0)  # PYR(self, 440, 0)
+        self.pyr =  PYR(self, 440, 0)#PYR(self, 420, 0)
         #
-        self.logo = Logo(self, 550, 75)
+        self.logo = Logo(self, 420, 75)
         #
         self.log = Log(self, 0, 150)
         #
-        self.thermometer1 = ThermoSignal(self, "P1", 25, 0) #ThermoSignal(self, "P1", 10, 0)
-        self.thermometer2 = ThermoSignal(self, "P2", 150, 0) #ThermoSignal(self, "P2", 120, 0)
+        self.thermometer1 = ThermoSignal(self, "P1", 10, 0)#ThermoSignal(self, "P1", 25, 0) 
+        self.thermometer2 = ThermoSignal(self, "P2", 120, 0)#ThermoSignal(self, "P2", 150, 0)
         #
         self.stop_button = Stop_Button(self, 640, 0)
         self.lev_button = Levitation_Button(self, 640, 105)
         self.impulse_button = Impulse_Button(self, 640, 210)
         
         if getComType()==1:
-            self.ip_get_button = IP_Button(self, 320,110,0)
-            self.ip_send_button = IP_Button(self,420,110,1)
+            self.ip_get_button = IP_Button(self, 220,110,0)
+            self.ip_send_button = IP_Button(self,320,110,1)
             self.socket = self.create_socket()
         #
-        # self.power=Power(self,230,0)
+        self.power=Power(self,230,0)
         #
-        self.pressure = Pressure(self, 285, 0) #Pressure(self, 330, 0)
-
+        self.pressure = Pressure(self, 330, 0)  # Pressure(self, 285, 0)
+        #
+        self.direction = DirectionSwitch(self, 530, 100,0)
 
         if getComType()==0:
             self.conn =serial.Serial()
             self.readData = thread.Thread(target=self.readAndParseDATA_LORA)
-            #print(self.conn.is_open)#####
         else:
             self.conn, self.addr = -1, -1
             self.readData = thread.Thread(target=self.readAndParseDATA)
@@ -146,7 +149,7 @@ class App:
         return ser
 
     def appendFile(self, recived_data):
-        _LOG_FILE_ = open("Logs/"+_LOG_FILE_NAME_+".txt", "a")
+        _LOG_FILE_ = open("Logs/"+_LOG_FILE_NAME_+".csv", "a")
         _LOG_FILE_.write(recived_data+"\n")
         _LOG_FILE_.close()
 
@@ -231,6 +234,19 @@ def DecToStringArr(arr):
                 strV += chr(int(k[i:i+2], 10))
             result.append(strV)
     return result
+
+
+class DirectionSwitch:
+    def __init__(self, obj, _x_, _y_,state):
+        global _DIRECTION_
+        _DIRECTION_ = state
+        self.state=state
+        self.canvas = Canvas(
+            obj.window, height=50, width=80, background=obj.window["bg"], highlightthickness=0)
+        self.direction = [PhotoImage(
+            file='Images/i.png'), PhotoImage(file='Images/g.png')]
+        self.img=self.canvas.create_image(0, 0, image=self.direction[state], anchor=NW)
+        self.canvas.place(x=_x_, y=_y_)
 class Name_Text:
     def __init__(self, obj, _str_, _x_, _y_, _height_, _widht_):
         self.txtCanvas = Canvas(
@@ -345,12 +361,12 @@ class Speedometer:
 class Acceleration:
     def __init__(self, obj, _name_, _x_, _y_, _max_):
         self.max_acc = _max_
-        self.accCanvas = Canvas(obj.window, height=150, width=30,
+        self.accCanvas = Canvas(obj.window, height=150, width=32,
                                 background=obj.window['bg'], highlightbackground="black", highlightthickness=1)
 
         # Acc Level
         self.accLevel = self.accCanvas.create_rectangle(
-            0, 120, 31, 120, fill="#A10FF0")  # sol alt,sağ üst
+            0, 120, 33, 120, fill="#A10FF0")  # sol alt,sağ üst
         self.accName = self.accCanvas.create_text(
             16, 140, fill="black", text=_name_, font=('Helvetica 12 bold'))
         self.accLevelTxt = self.accCanvas.create_text(
@@ -450,10 +466,10 @@ def updateAcceleration(obj, value=0):
         obj.accCanvas.delete(obj.accLevelTxt)
         obj.accCanvas.delete(obj.accLevel)
 
-        x = 120.0 - float((120.0/obj.max_acc)*value)
+        x = 60.0 - float((60.0/obj.max_acc)*value)
         color = colorPicker(float((120.0/obj.max_acc)*value))
         obj.accLevel = obj.accCanvas.create_rectangle(
-            0, 120, 31, x, fill=color)  # sol alt,sağ üst
+            0, 60, 33, x, fill=color)  # sol alt,sağ üst
 
         obj.level = value
         obj.accLevelTxt = obj.accCanvas.create_text(
@@ -664,16 +680,19 @@ def levitation_signal(obj):
             print("No Client")
 
 def impulse_signal(obj):
+    global _DIRECTION_
+    #print("IMPULSE,"f'{_DIRECTION_}')
     if getComType() == 0:
         if obj.conn.is_open:
             obj.conn.write("impulse".encode())
-            print("IMPULSE")
+            print("IMPULSE'")
         else:
             print("No Client")
     else:
         if obj.conn != -1:
-            print("IMPULSE")
-            obj.conn.send("impulse".encode())
+            #global _DIRECTION_
+            print("IMPULSE,"f'{_DIRECTION_}')
+            obj.conn.send(("impulse,"+f'{_DIRECTION_}').encode())
         else:
             print("No Client")
         
@@ -684,15 +703,17 @@ def change_ip_signal(obj):
     else:
         print("No Client")
 
-# def changeAll(obj):
-#     for i in range(0, 100):
-#         updateAll(obj, [i/100, i/1000, i/1000, i+1, i+1, i+1, (i+2) %
-#                   25, (i+2)/10, (i+2)/10, i+3, i+3, i+3, i+4, i+4, i+4])
+def changeAll(obj):
+    for i in range(0, 100):
+        updateAll(obj, [i/100, i/1000, i/1000, i+1, i+1, i+1, (i+2) %
+                  25, (i+2)/10, (i+2)/10, i+3, i+3, i+3, i+4, i+4, i+4,i/4])
 
 def updateAll(obj, params):
     if getFlag() != 0:
         return
-    updateLog(obj.log, params)
+    data = f'{params[0]}'+","+f'{params[6]}'+"," + f'{params[3]}'
+    updateLog(obj.log,str(data) )
+    obj.appendFile(str(data))
     if getFlag() != 0:
         return
     updateAccelerations(obj, params[0:3])
@@ -711,7 +732,7 @@ def updateAll(obj, params):
     if getFlag() != 0:
         return
     updatePressure(obj.pressure, params[14])
-    #updatePower(obj.power, params[14])
+    #updatePower(obj.power, params[15])
     obj.window.update()
 
 def getIP(txt):
@@ -727,12 +748,25 @@ def getIP(txt):
                 continue
             else:
                 break
+
+
+def getDirection(obj):
+    global _DIRECTION_
+    if obj.direction.state==0:
+        obj.direction.state=1
+    else:
+        obj.direction.state=0
+    _DIRECTION_ = obj.direction.state
+
+    obj.direction.canvas.delete(obj.direction.img)
+    obj.direction.img = obj.direction.canvas.create_image(
+        0, 0, image=obj.direction.direction[_DIRECTION_], anchor=NW)
         
 if __name__ == '__main__':
     if getComType()==1:
         getIP('Insert Your IP:')
     app = App()
-    # app.window.bind("<Down>", lambda event, obj=app: changeAll(obj))
+    #app.window.bind("<Down>", lambda event, obj=app: changeAll(obj))
     # app.window.bind("<Up>", lambda event, obj=app:changeLoc(obj))
     app.stop_button.canvas.bind(
         "<Button-1>", lambda event, obj=app: stop_signal(obj))
@@ -745,5 +779,7 @@ if __name__ == '__main__':
             "<Button-1>", lambda event, obj=app: getIP("New IP:"))
         app.ip_send_button.canvas.bind(
             "<Button-1>", lambda event, obj=app: change_ip_signal(obj))
+        app.direction.canvas.bind(
+            "<Button-1>", lambda event, obj=app: getDirection(obj))
     app.window.protocol('WM_DELETE_WINDOW', lambda obj=app: exit_func(obj))
     app.window.mainloop()
