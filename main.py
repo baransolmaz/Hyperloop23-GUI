@@ -61,7 +61,7 @@ class Dialog:
 class App:
     def __init__(self):
         self.window = Tk()
-        self.window.geometry("750x470")  # Screen Size(yatay x dikey)
+        self.window.geometry("800x470")  # Screen Size(yatay x dikey)
         self.window.resizable(0, 0)
         
         if getComType() == 0:
@@ -77,8 +77,8 @@ class App:
         self.appendFile("Zaman(sn),Ivme,Hiz,Konum")
         #
         self.speedometer_X = Speedometer(self, "X", 350, 470, 25)
-        self.speedometer_Y = Speedometer(self, "Y", 550, 470, 1)
-        self.speedometer_Z = Speedometer(self, "Z", 750, 470, 1)
+        self.speedometer_Y = Speedometer(self, "Y", 560, 470, 1)
+        self.speedometer_Z = Speedometer(self, "Z", 770, 470, 1)
         #
         self.acceleration_txt = Name_Text(
             self, "Acceleration-m/s^2", 1, 450, 30, 148)
@@ -91,29 +91,29 @@ class App:
         self.location_Y = Location(self, "Y", 550, 360, 0.1)
         self.location_Z = Location(self, "Z", 750, 360, 0.1)
         #
-        self.pyr =  PYR(self, 440, 0)#PYR(self, 420, 0)
+        self.pyr =  PYR(self, 470, 0)#PYR(self, 420, 0)
         #
-        self.logo = Logo(self, 420, 75)
+        self.logo = Logo(self, 440, 75)
         #
         self.log = Log(self, 0, 150)
         #
         self.thermometer1 = ThermoSignal(self, "P1", 10, 0)#ThermoSignal(self, "P1", 25, 0) 
-        self.thermometer2 = ThermoSignal(self, "P2", 120, 0)#ThermoSignal(self, "P2", 150, 0)
+        self.thermometer2 = ThermoSignal(self, "P2", 125, 0)#ThermoSignal(self, "P2", 150, 0)
         #
-        self.stop_button = Stop_Button(self, 640, 0)
-        self.lev_button = Levitation_Button(self, 640, 105)
-        self.impulse_button = Impulse_Button(self, 640, 210)
+        self.stop_button = Stop_Button(self, 690, 0)
+        self.lev_button = Levitation_Button(self, 690, 105)
+        self.impulse_button = Impulse_Button(self, 690, 210)
         
         if getComType()==1:
             self.ip_get_button = IP_Button(self, 220,110,0)
             self.ip_send_button = IP_Button(self,320,110,1)
             self.socket = self.create_socket()
         #
-        self.power=Power(self,230,0)
+        self.power=Power(self,240,0)
         #
-        self.pressure = Pressure(self, 330, 0)  # Pressure(self, 285, 0)
+        self.pressure = Pressure(self, 355, 0)  # Pressure(self, 285, 0)
         #
-        self.direction = DirectionSwitch(self, 530, 100,0)
+        self.direction = DirectionSwitch(self, 550, 100,0)
 
         if getComType()==0:
             self.conn =serial.Serial()
@@ -266,7 +266,7 @@ class Logo:
 class PYR:
     def __init__(self, obj, _x_, _y_):
         self.pyrCanvas = Canvas(
-            obj.window, height=100, width=180, background=obj.window["bg"], highlightthickness=0)
+            obj.window, height=100, width=200, background=obj.window["bg"], highlightthickness=0)
         self.pyrCanvas.place(x=_x_, y=_y_, anchor=NW)
         self.photo = PhotoImage(file="Images/roll-pitch-yaw.png")
         self.pyrCanvas.create_image(0, 0, image=self.photo, anchor=NW)
@@ -280,7 +280,7 @@ class PYR:
 class Power:
     def __init__(self, obj, _x_, _y_):
         self.powerCanvas = Canvas(
-            obj.window, height=100, width=100, background=obj.window["bg"], highlightthickness=0)
+            obj.window, height=100, width=120, background=obj.window["bg"], highlightthickness=0)
         self.powerCanvas.place(x=_x_, y=_y_, anchor=NW)
         self.photo = PhotoImage(file="Images/power.png")
         self.powerCanvas.create_image(0, 0, image=self.photo, anchor=NW)
@@ -404,7 +404,7 @@ class ThermoSignal:
 
 class Log:
     def __init__(self, obj, _x_, _y_):
-        self.can = Canvas(obj.window, height=20, width=100,
+        self.can = Canvas(obj.window, height=20, width=110,
                           background=obj.window["bg"], highlightthickness=0)
         self.t = self.can.create_text(
             2, 2, fill="black", text="LOGS", font=('Helvetica 15 bold'), anchor=NW)
@@ -732,7 +732,7 @@ def updateAll(obj, params):
     if getFlag() != 0:
         return
     updatePressure(obj.pressure, params[14])
-    #updatePower(obj.power, params[15])
+    updatePower(obj.power, params[15])
     obj.window.update()
 
 def getIP(txt):
